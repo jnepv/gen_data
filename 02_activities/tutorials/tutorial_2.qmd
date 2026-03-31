@@ -90,7 +90,7 @@ duplicate / MZ twin: ~0.5
 plink2 --bfile ./02_activities/data/gwa.qc_pruned --king-cutoff 0.0884 --out ./02_activities/data/gwa_qc
 ```
 
---king-cutoff T means: remove one individual from any pair with kinship ≥ T
+--king-cutoff T means: remove one individual from any pair with kinship ≥ T 
 
 This command uses the pruned SNP set to estimate pairwise kinship and then automatically chooses a subset of individuals that are mutually unrelated up to the specified cutoff. It produces ID files such as:
 
