@@ -138,6 +138,9 @@ You can later experiment with including more PCs to see how the results change.
 
 ```{bash,results='hide',message=FALSE, warning=FALSE}
 plink2 --bfile ./02_activities/data/gwa.qc_unrelated --ci 0.95 --logistic --covar ./02_activities/data/gwa_unrel_PCA.eigenvec --covar-name PC1,PC2,PC3 --adjust --out ./02_activities/data/gwa.qc_assoc
+
+setopt interactivecomments
+# --logistic can be changed for --glm to run linear regression for continuous traits, or --linear for a simpler linear model without covariate adjustment.
 ```
 
 Explanation of the main options:
@@ -193,8 +196,24 @@ manhattan(assoc_add,
           ylab = "",
           suggestiveline = FALSE,
           cex.axis = 1.5,
-          col = c("lightblue", "lightslateblue"))
+          col = c("lightblue", "lightslateblue"),
+          annotatePval=5e-8)
+
 dev.off()
+
+# manhattan(assoc_add,
+#          chr = "CHR",
+#          bp  = "BP",
+#          snp = "SNP",
+#          p   = "P",
+#          xlab = "",
+#          ylab = "",
+#          suggestiveline = FALSE,
+#          cex.axis = 1.5,
+#          col = c("lightblue", "lightslateblue"),
+#         chrlabs=as.character(1:22),             # Manually set chromosome labels to 1, 2, ..., 22 and x-axis ticks to match
+#         cex.axis=0.7,                           # Shrink the size
+#         las = 2)                                # Rotate x-axis labels for better readability
 ```
 
 ```{r}
@@ -204,6 +223,72 @@ qq(assoc_add$P, main = "Q-Q plot of GWAS p-values")
 dev.off()
 ```
 For more examples and plotting options, see the qqman vignette: <https://cran.r-project.org/web/packages/qqman/vignettes/qqman.html>
+
+
+#### Condiditional analysis
+
+```{bash}
+
+setopt interactivecomments
+plink2 \
+  --bfile ./02_activities/data/gwa.qc_unrelated \
+  --logistic \
+  --covar ./02_activities/data/gwa_unrel_PCA.eigenvec \
+  --covar-name PC1,PC2,PC3 \
+  --condition rs6768587 \
+  --out ./02_activities/data/gwa.qc_assoc_cond_rs6768587
+
+
+# --condition-list <document.txt> can be used to condition on multiple SNPs at once (instead of --condition)
+```
+
+
+```{r}
+assoc_condition <- data.table::fread("./02_activities/data/gwa.qc_assoc_cond_rs6768587.PHENO1.glm.logistic.hybrid")
+
+assoc_condition=na.omit(assoc_condition)
+head(assoc_condition)
+
+assoc_add1 <- assoc_condition[TEST == "ADD"]
+head(assoc_add1)
+```
+
+
+```{r}
+
+# qqman expects columns named CHR, BP, SNP, and P.
+# In PLINK2 output they are #CHROM, POS, ID, and P.
+setnames(assoc_add1, c("#CHROM","POS","ID"), c("CHR","BP","SNP"))
+
+# Manhattan plot
+png("./02_activities/data/manhattan_condition_plot.png", width = 1200, height = 800, res = 150)
+
+ manhattan(assoc_add1,
+          chr = "CHR",
+          bp  = "BP",
+          snp = "SNP",
+          p   = "P",
+          xlab = "",
+          ylab = "",
+          suggestiveline = FALSE,
+          cex.axis = 1.5,
+          col = c("lightblue", "lightslateblue"), annotatePval=5e-5)         
+dev.off()
+
+```
+
+```{bash}
+
+setopt interactivecomments
+
+plink2 \
+  --bfile ./02_activities/data/gwa.qc_unrelated \
+  --logistic \
+  --covar ./02_activities/data/gwa_unrel_PCA.eigenvec \
+  --covar-name PC1,PC2,PC3 \
+  --condition-list condition_snps.txt \
+  --out ./02_activities/data/gwa.qc_assoc_cond_list
+```
 
 #### Appendix – Overview of commonly used genetic analysis tools
 
